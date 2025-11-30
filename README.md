@@ -81,5 +81,3 @@ strategies: [
 Frei zur Nutzung im Bildungskontext.
 
 Eine kommerzielle Nutzung oder Weiterverbreitung bedarf der Zustimmung des Autors.
-
-test Nummer 2
