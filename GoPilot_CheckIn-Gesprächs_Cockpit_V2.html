@@ -78,7 +78,7 @@
                 <!-- LOGO BEREICH -->
                 <!-- Da das Logo blau ist und der Hintergrund auch, setzen wir es in eine weiße Box -->
                 <div class="bg-white p-2 rounded-lg shadow-sm flex-shrink-0">
-                    <img src="MMBBS_Bildmarke_2025_blau.png" alt="MMBBS Logo" class="h-12 w-auto object-contain" onerror="this.style.display='none'; this.parentElement.innerHTML='<span class=\'text-3xl\'></span>'">
+                    <img src="MMBBS_Bildmarke_2025_blau.png" alt="MMBBS Logo" class="h-12 w-auto object-contain" onerror="this.style.display='none'; this.parentElement.innerHTML='<span class=\'text-3xl\'>🧭</span>'">
                 </div>
                 
                 <div>
@@ -446,6 +446,11 @@
             
             // Configuration Data
             config: {
+                // HINWEIS ZUM HINZUFÜGEN NEUER FELDER:
+                // Um neue Optionen hinzuzufügen, einfach eine neue Zeile in das entsprechende Array einfügen.
+                // Format: { id: 'ein_eindeutiger_name', label: 'Der angezeigte Text/Emoji' }
+                
+                // 1. Gefühle (Seite 1: Status Quo)
                 feelings: [
                     { id: 'stressed', label: '😰 Gestresst' },
                     { id: 'bored', label: '🥱 Gelangweilt' },
@@ -454,12 +459,18 @@
                     { id: 'tired', label: '😴 Müde' },
                     { id: 'motivated', label: '🔥 Motiviert' }
                 ],
+                
+                // 2. Hürden-Ursachen (Seite 2: Rückblick)
                 hurdleCauses: [
                     { id: 'time', label: '⏳ Zeitmangel' },
                     { id: 'understanding', label: '❓ Verständnis' },
                     { id: 'distraction', label: '📱 Ablenkung' },
-                    { id: 'strategy', label: '🔧 Falsche Strategie' }
+                    { id: 'strategy', label: '🔧 Falsche Strategie' },
+                    // Verschoben von Gefühle:
+                    { id: 'approachable', label: '💬 Ansprechbar' }
                 ],
+                
+                // 3. Strategien (Seite 3: Strategie)
                 strategies: [
                     { id: 'summary', label: '📝 Zusammenfassung' },
                     { id: 'mindmap', label: '🧠 Mindmap' },
