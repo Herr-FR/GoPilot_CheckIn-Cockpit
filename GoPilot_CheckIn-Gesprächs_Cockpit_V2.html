@@ -71,18 +71,20 @@
 <body class="bg-stone-50 text-stone-800 font-sans antialiased min-h-screen flex flex-col">
 
     <!-- Header -->
-    <header class="bg-white shadow-sm border-b border-stone-200 sticky top-0 z-50">
+    <!-- CD Farben angepasst: Hintergrund RGB 30/135/200, Rand unten RGB 250/229/97 -->
+    <header class="bg-[rgb(30,135,200)] shadow-sm border-b-4 border-[rgb(250,229,97)] sticky top-0 z-50">
         <div class="max-w-5xl mx-auto px-4 py-4 flex flex-col sm:flex-row justify-between items-center gap-4">
             <div class="flex items-center gap-2">
                 <span class="text-3xl">🧭</span>
                 <div>
-                    <h1 class="text-xl font-bold text-stone-800">Lern-Check-In</h1>
-                    <p class="text-xs text-stone-500">Interaktiver Reflexionsbogen</p>
+                    <!-- Textfarbe auf Weiß geändert für Kontrast auf dem blauen CD-Hintergrund -->
+                    <h1 class="text-xl font-bold text-white">Lern-Check-In</h1>
+                    <p class="text-xs text-blue-100">Interaktiver Reflexionsbogen</p>
                 </div>
             </div>
             <div class="flex items-center gap-2 w-full sm:w-auto">
-                <input type="text" id="studentName" placeholder="Dein Name..." class="px-4 py-2 rounded-lg border border-stone-300 focus:outline-none focus:ring-2 focus:ring-teal-500 w-full sm:w-64 bg-stone-50 text-sm">
-                <span id="dateDisplay" class="text-xs text-stone-400 font-mono hidden sm:block"></span>
+                <input type="text" id="studentName" placeholder="Dein Name..." class="px-4 py-2 rounded-lg border border-blue-300 focus:outline-none focus:ring-2 focus:ring-yellow-300 w-full sm:w-64 bg-white text-stone-800 text-sm shadow-inner">
+                <span id="dateDisplay" class="text-xs text-blue-100 font-mono hidden sm:block"></span>
             </div>
         </div>
     </header>
