@@ -794,6 +794,61 @@
                 // Ensure scroll is at top
                 window.scrollTo(0, 0);
 
+                // --- FIX START: Temporäre Umwandlung von Inputs in Text-Divs ---
+                // Behebt das Problem, dass Text in Inputs abgeschnitten wird (html2canvas Bug)
+                // und sorgt dafür, dass langer Text in Textareas komplett sichtbar ist.
+                const inputs = document.querySelectorAll('input[type="text"], textarea');
+                const replacements = [];
+
+                inputs.forEach(input => {
+                    // Wir ersetzen Elemente nur, wenn sie sichtbar sind
+                    if (input.offsetParent === null) return;
+
+                    const div = document.createElement('div');
+                    
+                    // Styles vom Original kopieren (via computed styles für Exaktheit)
+                    const style = window.getComputedStyle(input);
+                    
+                    // Tailwind Klassen übernehmen für Grundstyling
+                    div.className = input.className;
+                    
+                    // Kritische CSS-Eigenschaften explizit übertragen
+                    div.style.width = style.width;
+                    div.style.padding = style.padding;
+                    div.style.border = style.border;
+                    div.style.borderRadius = style.borderRadius;
+                    div.style.fontSize = style.fontSize;
+                    div.style.fontFamily = style.fontFamily;
+                    div.style.lineHeight = style.lineHeight;
+                    div.style.color = style.color;
+                    div.style.backgroundColor = style.backgroundColor;
+                    div.style.boxShadow = style.boxShadow;
+                    
+                    // Inhalt setzen
+                    div.textContent = input.value;
+                    
+                    // Spezifische Anpassungen je nach Typ
+                    if (input.tagName.toLowerCase() === 'textarea') {
+                        div.style.whiteSpace = 'pre-wrap'; // Zeilenumbrüche erhalten
+                        div.style.height = 'auto';         // Automatische Höhe (damit alles lesbar ist)
+                        div.style.minHeight = style.height; // Mindestens so hoch wie das Original
+                        div.style.overflow = 'visible';
+                    } else {
+                        // Für einzeilige Inputs (wie Name)
+                        div.style.whiteSpace = 'nowrap';
+                        div.style.overflow = 'hidden';
+                        div.style.height = style.height; // Höhe fixieren wie Input
+                        div.style.display = 'flex';      // Flexbox für vertikale Zentrierung
+                        div.style.alignItems = 'center'; // Text vertikal zentrieren (behebt das Abschneiden)
+                    }
+
+                    // Input verstecken, Div einfügen
+                    input.style.display = 'none';
+                    input.parentNode.insertBefore(div, input);
+                    replacements.push({ input, div });
+                });
+                // --- FIX END ---
+
                 try {
                     const canvas = await html2canvas(element, {
                         scale: 2, // Higher scale for better resolution
@@ -802,6 +857,9 @@
                         ignoreElements: (element) => {
                             // Also manually check for ignore attribute if library version behaves oddly
                             return element.hasAttribute('data-html2canvas-ignore');
+                        },
+                        onclone: (clonedDoc) => {
+                            // Optional: Manuelle Anpassungen im geklonten Dokument falls nötig
                         }
                     });
 
@@ -817,24 +875,11 @@
                     const imgHeight = (imgProps.height * pdfWidth) / imgProps.width;
                     
                     // If content is longer than one page, simple scaling (fit to width)
-                    // For this app, it usually fits on one page or we just print the first page for summary.
-                    // If it's very long, we might need addPage logic, but let's stick to simple single page scale first.
-                    
                     let heightLeft = imgHeight;
                     let position = 0;
 
                     pdf.addImage(imgData, 'PNG', 0, position, pdfWidth, imgHeight);
                     
-                    // Handle multi-page if strictly needed (simple version)
-                    /* heightLeft -= pdfHeight;
-                    while (heightLeft >= 0) {
-                      position = heightLeft - imgHeight;
-                      pdf.addPage();
-                      pdf.addImage(imgData, 'PNG', 0, position, pdfWidth, imgHeight);
-                      heightLeft -= pdfHeight;
-                    }
-                    */
-
                     // Generate filename with date
                     const dateStr = new Date().toISOString().split('T')[0];
                     pdf.save(`Reflexion_${dateStr}.pdf`);
@@ -842,6 +887,12 @@
                 } catch (err) {
                     console.error("PDF Generation Error: ", err);
                     alert("Fehler beim Erstellen des PDFs. Bitte nutzen Sie die 'Drucken'-Funktion und wählen Sie 'Als PDF speichern'.");
+                } finally {
+                    // --- CLEANUP: Rückgängig machen (Inputs wieder anzeigen) ---
+                    replacements.forEach(rep => {
+                        rep.div.remove();
+                        rep.input.style.display = '';
+                    });
                 }
             }
         };
