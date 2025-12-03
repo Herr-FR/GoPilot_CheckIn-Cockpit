@@ -9,6 +9,10 @@
     <!-- Chart.js -->
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     
+    <!-- PDF Generation Libraries -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+    
     <!-- Placeholder Comments Required by Prompt -->
     <!-- Chosen Palette: Corporate Design Blue (30/135/200) & Yellow (250/229/97) + Warm Neutrals -->
     <!-- Application Structure Plan: 5-stage Wizard flow with CD Header and Logo integration. -->
@@ -68,7 +72,7 @@
         }
     </style>
 </head>
-<body class="bg-stone-50 text-stone-800 font-sans antialiased min-h-screen flex flex-col">
+<body class="bg-stone-50 text-stone-800 font-sans antialiased min-h-screen flex flex-col" id="app-body">
 
     <!-- Header -->
     <!-- CD Farben angepasst: Hintergrund RGB 30/135/200, Rand unten RGB 250/229/97 -->
@@ -96,10 +100,10 @@
     </header>
 
     <!-- Main Content Area -->
-    <main class="flex-grow max-w-4xl w-full mx-auto px-4 py-8">
+    <main class="flex-grow max-w-4xl w-full mx-auto px-4 py-8" id="main-content">
         
         <!-- Navigation Tabs -->
-        <nav class="flex overflow-x-auto no-scrollbar gap-2 mb-8 pb-2 border-b border-stone-200">
+        <nav class="flex overflow-x-auto no-scrollbar gap-2 mb-8 pb-2 border-b border-stone-200" data-html2canvas-ignore="true">
             <button onclick="app.switchTab('status')" id="nav-status" class="nav-btn whitespace-nowrap px-4 py-2 rounded-t-lg font-medium text-sm transition-colors border-b-2 border-teal-600 text-teal-800 bg-teal-50">1. Status Quo</button>
             <button onclick="app.switchTab('retro')" id="nav-retro" class="nav-btn whitespace-nowrap px-4 py-2 rounded-t-lg font-medium text-sm transition-colors border-b-2 border-transparent text-stone-500 hover:text-stone-700 hover:bg-stone-100">2. Rückblick</button>
             <button onclick="app.switchTab('strategy')" id="nav-strategy" class="nav-btn whitespace-nowrap px-4 py-2 rounded-t-lg font-medium text-sm transition-colors border-b-2 border-transparent text-stone-500 hover:text-stone-700 hover:bg-stone-100">3. Strategie</button>
@@ -232,11 +236,17 @@
 
             <!-- Cognitive Depth Slider -->
             <div class="bg-gradient-to-r from-blue-50 to-indigo-50 p-6 rounded-xl border border-indigo-100">
+                <div class="mb-4">
+                    <label class="block font-bold text-indigo-900 text-lg">🧠 Kognitive Tiefe</label>
+                    <p class="text-sm text-indigo-700 mt-2 bg-white/50 p-3 rounded-lg border border-indigo-100">
+                        <strong>Was bedeutet das?</strong><br>
+                        "Kognitive Tiefe" beschreibt, wie intensiv du dich mit dem Lernstoff beschäftigt hast. 
+                        Hast du Informationen nur kurzzeitig gespeichert ("Bulimie-Lernen") oder hast du sie wirklich durchdrungen, verstanden und kannst sie auf neue Situationen übertragen?
+                    </p>
+                </div>
+
                 <div class="flex justify-between items-end mb-4">
-                    <div>
-                        <label class="block font-bold text-indigo-900">🧠 Kognitive Tiefe</label>
-                        <p class="text-xs text-indigo-600 mt-1">Hast du nur für den Test gelernt oder wirklich verstanden?</p>
-                    </div>
+                    <p class="text-xs text-indigo-600 italic">Einschätzung:</p>
                     <span id="val-depth" class="text-3xl font-bold text-indigo-600">5/10</span>
                 </div>
                 
@@ -247,7 +257,7 @@
                 <div class="flex justify-between text-xs font-medium text-stone-500 mt-2 px-1">
                     <div class="text-left w-1/3">
                         <span class="block font-bold text-stone-700">Oberflächlich (1-3)</span>
-                        Durchlesen, Markieren, Auswendiglernen (Bulimie-Lernen)
+                        Durchlesen, Markieren, Auswendiglernen
                     </div>
                     <div class="text-center w-1/3 border-l border-r border-stone-300">
                         <span class="block font-bold text-stone-700">Verarbeitend (4-7)</span>
@@ -340,9 +350,19 @@
                     <h2 class="text-lg font-bold text-indigo-900 mb-1">Reflexions-Cockpit</h2>
                     <p class="text-sm text-stone-600">Zusammenfassung für das Gespräch</p>
                 </div>
-                <button onclick="window.print()" class="bg-stone-200 hover:bg-stone-300 text-stone-700 px-4 py-2 rounded-lg text-sm font-bold flex items-center gap-2">
-                    🖨️ Drucken / PDF
-                </button>
+                
+                <!-- BUTTON AREA -->
+                <!-- data-html2canvas-ignore="true" ensures these buttons are not in the PDF -->
+                <div class="flex gap-2" data-html2canvas-ignore="true">
+                    <!-- Standard Drucken Button -->
+                    <button onclick="window.print()" class="bg-stone-200 hover:bg-stone-300 text-stone-700 px-4 py-2 rounded-lg text-sm font-bold flex items-center gap-2">
+                        🖨️ Drucken
+                    </button>
+                    <!-- Neuer PDF Download Button -->
+                    <button onclick="app.generatePDF()" class="bg-indigo-600 hover:bg-indigo-700 text-white px-4 py-2 rounded-lg text-sm font-bold flex items-center gap-2 shadow-sm transition-transform active:scale-95">
+                        📥 PDF
+                    </button>
+                </div>
             </div>
 
             <div class="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-6">
@@ -419,7 +439,8 @@
     </main>
 
     <!-- Footer -->
-    <footer class="bg-stone-100 py-6 border-t border-stone-200 mt-auto print:hidden">
+    <!-- data-html2canvas-ignore="true" so it's not in the PDF screenshot (optional, usually footer is fine) -->
+    <footer class="bg-stone-100 py-6 border-t border-stone-200 mt-auto print:hidden" data-html2canvas-ignore="true">
         <div class="max-w-4xl mx-auto px-4 text-center text-xs text-stone-400">
             <p class="mb-2">Interaktives Reflexionstool | Daten werden nicht gespeichert (Session-Only).</p>
             
@@ -490,7 +511,9 @@
                     { id: 'practice', label: '✍️ Aufgaben lösen', description: 'Übungsaufgaben selbstständig bearbeiten.' },
                     // NEU HINZUGEFÜGT:
                     { id: 'cornell', label: '📓 Cornell Methode', description: 'Notizen strukturieren: Hinweise, Hauptteil, Zusammenfassung.' },
-                    { id: 'SQ3R', label: '📖 SQ3R Methode', description: '5 Schritte: Überblick, Fragen, Lesen, Wiedergeben, Rückblick.' }
+                    { id: 'SQ3R', label: '📖 SQ3R Methode', description: '5 Schritte: Überblick, Fragen, Lesen, Wiedergeben, Rückblick.' },
+                    // KI Tool hinzugefügt
+                    { id: 'ai', label: '🤖 KI-Tools', description: 'ChatGPT & Co. als Tutor nutzen, nicht nur zum Abschreiben.' }
                 ]
             },
 
@@ -726,6 +749,69 @@
                         this.state.depth
                     ];
                     this.charts.radar.update();
+                }
+            },
+            
+            // --- PDF Generation Logic ---
+            async generatePDF() {
+                const { jsPDF } = window.jspdf;
+                
+                // Select element to capture (document body or main content)
+                // We'll capture body to include header, but ignore nav/footer via data attributes
+                const element = document.body;
+                
+                // Temporary visual changes before capture if needed (though data-html2canvas-ignore handles most)
+                // Ensure scroll is at top
+                window.scrollTo(0, 0);
+
+                try {
+                    const canvas = await html2canvas(element, {
+                        scale: 2, // Higher scale for better resolution
+                        useCORS: true, // Needed for images if served from external
+                        logging: false,
+                        ignoreElements: (element) => {
+                            // Also manually check for ignore attribute if library version behaves oddly
+                            return element.hasAttribute('data-html2canvas-ignore');
+                        }
+                    });
+
+                    const imgData = canvas.toDataURL('image/png');
+                    
+                    // Create PDF
+                    // A4 size: 210mm x 297mm
+                    const pdf = new jsPDF('p', 'mm', 'a4');
+                    const pdfWidth = pdf.internal.pageSize.getWidth();
+                    const pdfHeight = pdf.internal.pageSize.getHeight();
+                    
+                    const imgProps = pdf.getImageProperties(imgData);
+                    const imgHeight = (imgProps.height * pdfWidth) / imgProps.width;
+                    
+                    // If content is longer than one page, simple scaling (fit to width)
+                    // For this app, it usually fits on one page or we just print the first page for summary.
+                    // If it's very long, we might need addPage logic, but let's stick to simple single page scale first.
+                    
+                    let heightLeft = imgHeight;
+                    let position = 0;
+
+                    pdf.addImage(imgData, 'PNG', 0, position, pdfWidth, imgHeight);
+                    
+                    // Handle multi-page if strictly needed (simple version)
+                    /* heightLeft -= pdfHeight;
+                    while (heightLeft >= 0) {
+                      position = heightLeft - imgHeight;
+                      pdf.addPage();
+                      pdf.addImage(imgData, 'PNG', 0, position, pdfWidth, imgHeight);
+                      heightLeft -= pdfHeight;
+                    }
+                    */
+
+                    // Generate filename with date
+                    const dateStr = new Date().toISOString().split('T')[0];
+                    pdf.save(`Reflexion_${dateStr}.pdf`);
+                    
+                } catch (err) {
+                    console.error("PDF Generation Error: ", err);
+                    alert("Fehler beim Erstellen des PDFs. Bitte nutzen Sie die 'Drucken'-Funktion und wählen Sie 'Als PDF speichern'.");
                 }
             }
         };
