@@ -75,6 +75,8 @@ strategies: [
     { id: 'new_item', label: '🎧 Podcast hören' } // Neu hinzugefügt
 ]
 
+# Lizenzhinweis
+
 Lizenzhinweis: Dieses Werk ist lizenziert unter einer Creative Commons Namensnennung - Nicht-kommerziell - Keine Bearbeitung 4.0 International Lizenz.
 
 Das bedeutet, Sie dürfen:
