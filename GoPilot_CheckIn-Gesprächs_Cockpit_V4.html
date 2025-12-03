@@ -1,0 +1,825 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Interaktiver Check-In & Lern-Reflexion</title>
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Chart.js -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    
+    <!-- PDF Generation Libraries -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+    
+    <!-- Placeholder Comments Required by Prompt -->
+    <!-- Chosen Palette: Corporate Design Blue (30/135/200) & Yellow (250/229/97) + Warm Neutrals -->
+    <!-- Application Structure Plan: 5-stage Wizard flow with CD Header and Logo integration. -->
+    <!-- Visualization & Content Choices: Radar Chart, Sliders. Logo added with white container for contrast. CONFIRMATION: NO SVG graphics used (except loaded image). NO Mermaid JS used. -->
+
+    <style>
+        /* Custom Chart Container Styling as per requirements */
+        .chart-container {
+            position: relative;
+            width: 100%;
+            max-width: 600px;
+            margin-left: auto;
+            margin-right: auto;
+            height: 300px;
+            max-height: 400px;
+        }
+
+        @media (min-width: 768px) {
+            .chart-container {
+                height: 350px;
+            }
+        }
+
+        /* Custom Range Slider Styling */
+        input[type=range] {
+            -webkit-appearance: none; 
+            width: 100%; 
+            background: transparent; 
+        }
+        
+        input[type=range]::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            height: 24px;
+            width: 24px;
+            border-radius: 50%;
+            background: #0d9488; /* Teal-600 */
+            cursor: pointer;
+            margin-top: -8px; 
+            box-shadow: 0 1px 3px rgba(0,0,0,0.3);
+        }
+        
+        input[type=range]::-webkit-slider-runnable-track {
+            width: 100%;
+            height: 8px;
+            cursor: pointer;
+            background: #e7e5e4; /* Stone-200 */
+            border-radius: 4px;
+        }
+
+        /* Utility for hiding scrollbar in navigation but keeping functionality */
+        .no-scrollbar::-webkit-scrollbar {
+            display: none;
+        }
+        .no-scrollbar {
+            -ms-overflow-style: none;
+            scrollbar-width: none;
+        }
+    </style>
+</head>
+<body class="bg-stone-50 text-stone-800 font-sans antialiased min-h-screen flex flex-col" id="app-body">
+
+    <!-- Header -->
+    <!-- CD Farben angepasst: Hintergrund RGB 30/135/200, Rand unten RGB 250/229/97 -->
+    <header class="bg-[rgb(30,135,200)] shadow-sm border-b-4 border-[rgb(250,229,97)] sticky top-0 z-50">
+        <div class="max-w-5xl mx-auto px-4 py-3 flex flex-col sm:flex-row justify-between items-center gap-4">
+            <div class="flex items-center gap-4">
+                <!-- LOGO BEREICH -->
+                <!-- Da das Logo blau ist und der Hintergrund auch, setzen wir es in eine weiße Box -->
+                <div class="bg-white p-2 rounded-lg shadow-sm flex-shrink-0">
+                    <img src="MMBBS_Bildmarke_2025_blau.png" alt="MMBBS Logo" class="h-12 w-auto object-contain" onerror="this.style.display='none'; this.parentElement.innerHTML='<span class=\'text-3xl\'>🧭</span>'">
+                </div>
+                
+                <div>
+                    <!-- Textfarbe auf Weiß geändert für Kontrast auf dem blauen CD-Hintergrund -->
+                    <h1 class="text-xl font-bold text-white leading-tight">Lern-Check-In</h1>
+                    <p class="text-xs text-blue-100">Interaktiver Reflexionsbogen</p>
+                </div>
+            </div>
+            
+            <div class="flex items-center gap-2 w-full sm:w-auto">
+                <input type="text" id="studentName" placeholder="Dein Name..." class="px-4 py-2 rounded-lg border border-blue-300 focus:outline-none focus:ring-2 focus:ring-yellow-300 w-full sm:w-64 bg-white text-stone-800 text-sm shadow-inner">
+                <span id="dateDisplay" class="text-xs text-blue-100 font-mono hidden sm:block"></span>
+            </div>
+        </div>
+    </header>
+
+    <!-- Main Content Area -->
+    <main class="flex-grow max-w-4xl w-full mx-auto px-4 py-8" id="main-content">
+        
+        <!-- Navigation Tabs -->
+        <nav class="flex overflow-x-auto no-scrollbar gap-2 mb-8 pb-2 border-b border-stone-200" data-html2canvas-ignore="true">
+            <button onclick="app.switchTab('status')" id="nav-status" class="nav-btn whitespace-nowrap px-4 py-2 rounded-t-lg font-medium text-sm transition-colors border-b-2 border-teal-600 text-teal-800 bg-teal-50">1. Status Quo</button>
+            <button onclick="app.switchTab('retro')" id="nav-retro" class="nav-btn whitespace-nowrap px-4 py-2 rounded-t-lg font-medium text-sm transition-colors border-b-2 border-transparent text-stone-500 hover:text-stone-700 hover:bg-stone-100">2. Rückblick</button>
+            <button onclick="app.switchTab('strategy')" id="nav-strategy" class="nav-btn whitespace-nowrap px-4 py-2 rounded-t-lg font-medium text-sm transition-colors border-b-2 border-transparent text-stone-500 hover:text-stone-700 hover:bg-stone-100">3. Strategie</button>
+            <button onclick="app.switchTab('plan')" id="nav-plan" class="nav-btn whitespace-nowrap px-4 py-2 rounded-t-lg font-medium text-sm transition-colors border-b-2 border-transparent text-stone-500 hover:text-stone-700 hover:bg-stone-100">4. Der Plan</button>
+            <button onclick="app.switchTab('cockpit')" id="nav-cockpit" class="nav-btn whitespace-nowrap px-4 py-2 rounded-t-lg font-medium text-sm transition-colors border-b-2 border-transparent text-indigo-600 hover:text-indigo-800 hover:bg-indigo-50">📊 Cockpit (Ergebnis)</button>
+        </nav>
+
+        <!-- VIEW 1: STATUS QUO -->
+        <section id="view-status" class="view-section animate-fade-in">
+            <div class="mb-6 bg-white p-6 rounded-xl shadow-sm border border-stone-100">
+                <h2 class="text-lg font-bold text-teal-900 mb-2">Wie ist die aktuelle Lage?</h2>
+                <p class="text-sm text-stone-600">
+                    Bevor wir über Inhalte sprechen, müssen wir das Fundament klären. Lernen funktioniert nur, wenn Energie und Motivation vorhanden sind. Nutze diese Regler, um deinen aktuellen Zustand ehrlich einzuschätzen. Das hilft uns, realistische Ziele zu setzen.
+                </p>
+            </div>
+
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <!-- Energy -->
+                <div class="bg-white p-6 rounded-xl shadow-sm border border-stone-200">
+                    <div class="flex justify-between items-center mb-4">
+                        <label class="font-bold text-stone-700">🔋 Energie-Level (Akku)</label>
+                        <span id="val-energy" class="text-2xl font-bold text-teal-600">3/5</span>
+                    </div>
+                    <div class="flex justify-between text-2xl mb-2 px-2">
+                        <span class="cursor-pointer opacity-50 hover:opacity-100" onclick="app.setEnergy(1)">🪫</span>
+                        <span class="cursor-pointer opacity-50 hover:opacity-100" onclick="app.setEnergy(2)">🔌</span>
+                        <span class="cursor-pointer opacity-50 hover:opacity-100" onclick="app.setEnergy(3)">🔋</span>
+                        <span class="cursor-pointer opacity-50 hover:opacity-100" onclick="app.setEnergy(4)">⚡</span>
+                        <span class="cursor-pointer opacity-50 hover:opacity-100" onclick="app.setEnergy(5)">🚀</span>
+                    </div>
+                    <input type="range" min="1" max="5" value="3" id="input-energy" class="w-full accent-teal-600" oninput="app.updateEnergy(this.value)">
+                    <div class="flex justify-between text-xs text-stone-400 mt-2">
+                        <span>Leer</span>
+                        <span>Voll</span>
+                    </div>
+                </div>
+
+                <!-- Motivation -->
+                <div class="bg-white p-6 rounded-xl shadow-sm border border-stone-200">
+                    <div class="flex justify-between items-center mb-4">
+                        <label class="font-bold text-stone-700">🤩 Motivation</label>
+                        <span id="val-motivation" class="text-2xl font-bold text-teal-600">3/5</span>
+                    </div>
+                    <div class="flex justify-between text-2xl mb-2 px-2">
+                        <span class="cursor-pointer opacity-50 hover:opacity-100" onclick="app.setMotivation(1)">🥱</span>
+                        <span class="cursor-pointer opacity-50 hover:opacity-100" onclick="app.setMotivation(2)">😕</span>
+                        <span class="cursor-pointer opacity-50 hover:opacity-100" onclick="app.setMotivation(3)">😐</span>
+                        <span class="cursor-pointer opacity-50 hover:opacity-100" onclick="app.setMotivation(4)">🙂</span>
+                        <span class="cursor-pointer opacity-50 hover:opacity-100" onclick="app.setMotivation(5)">🤩</span>
+                    </div>
+                    <input type="range" min="1" max="5" value="3" id="input-motivation" class="w-full accent-teal-600" oninput="app.updateMotivation(this.value)">
+                    <div class="flex justify-between text-xs text-stone-400 mt-2">
+                        <span>Langeweile</span>
+                        <span>Begeisterung</span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Feelings Tags -->
+            <div class="mt-6 bg-white p-6 rounded-xl shadow-sm border border-stone-200">
+                <label class="block font-bold text-stone-700 mb-3">Ich fühle mich aktuell...</label>
+                <div class="flex flex-wrap gap-3" id="feelings-container">
+                    <!-- JS will populate buttons -->
+                </div>
+            </div>
+
+            <div class="mt-8 flex justify-end">
+                <button onclick="app.switchTab('retro')" class="bg-teal-600 hover:bg-teal-700 text-white px-6 py-2 rounded-lg font-bold shadow-md transition-transform transform active:scale-95 flex items-center gap-2">
+                    Weiter zum Rückblick ➔
+                </button>
+            </div>
+        </section>
+
+        <!-- VIEW 2: RÜCKBLICK -->
+        <section id="view-retro" class="view-section hidden animate-fade-in">
+            <div class="mb-6 bg-white p-6 rounded-xl shadow-sm border border-stone-100">
+                <h2 class="text-lg font-bold text-teal-900 mb-2">Rückblick: Analyse der Vergangenheit</h2>
+                <p class="text-sm text-stone-600">
+                    Aus Fehlern lernt man oft mehr als aus Erfolgen, aber Erfolge geben Kraft. Hier analysieren wir, was passiert ist. Identifiziere deine "High Fives" und deine Stolpersteine.
+                </p>
+            </div>
+
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <!-- Success -->
+                <div class="bg-emerald-50 p-6 rounded-xl border border-emerald-100">
+                    <label class="block font-bold text-emerald-800 mb-2">🏆 High Five Moment</label>
+                    <p class="text-xs text-emerald-600 mb-3">Was war dein größter Erfolg?</p>
+                    <textarea id="input-success" class="w-full h-32 p-3 rounded-lg border-emerald-200 bg-white focus:ring-2 focus:ring-emerald-400 focus:border-transparent resize-none text-sm" placeholder="Ich war stolz darauf, dass..."></textarea>
+                </div>
+
+                <!-- Hurdles -->
+                <div class="bg-rose-50 p-6 rounded-xl border border-rose-100">
+                    <label class="block font-bold text-rose-800 mb-2">🚧 Hürde / Stolperstein</label>
+                    <p class="text-xs text-rose-600 mb-3">Wo gab es Probleme?</p>
+                    <textarea id="input-hurdle" class="w-full h-32 p-3 rounded-lg border-rose-200 bg-white focus:ring-2 focus:ring-rose-400 focus:border-transparent resize-none text-sm" placeholder="Schwierig war für mich..."></textarea>
+                </div>
+            </div>
+
+            <!-- Hurdle Causes -->
+            <div class="mt-6 bg-white p-6 rounded-xl shadow-sm border border-stone-200">
+                <label class="block font-bold text-stone-700 mb-3">Woran lag es (Hürden-Ursache)?</label>
+                <div class="flex flex-wrap gap-3" id="hurdles-container">
+                    <!-- JS populated -->
+                </div>
+            </div>
+
+            <div class="mt-8 flex justify-between">
+                <button onclick="app.switchTab('status')" class="text-stone-500 hover:text-stone-700 px-4">Zurück</button>
+                <button onclick="app.switchTab('strategy')" class="bg-teal-600 hover:bg-teal-700 text-white px-6 py-2 rounded-lg font-bold shadow-md transition-transform transform active:scale-95 flex items-center gap-2">
+                    Weiter zu Strategien ➔
+                </button>
+            </div>
+        </section>
+
+        <!-- VIEW 3: STRATEGIE -->
+        <section id="view-strategy" class="view-section hidden animate-fade-in">
+            <div class="mb-6 bg-white p-6 rounded-xl shadow-sm border border-stone-100">
+                <h2 class="text-lg font-bold text-teal-900 mb-2">Wie hast du gelernt? (Metakognition)</h2>
+                <p class="text-sm text-stone-600">
+                    Es geht nicht nur darum, *was* wir lernen, sondern *wie*. "Beschäftigung mit dem Stoff" ist nicht gleich Lernen. Hier prüfen wir deine Werkzeuge und die Tiefe deiner Verarbeitung.
+                </p>
+            </div>
+
+            <div class="bg-white p-6 rounded-xl shadow-sm border border-stone-200 mb-6">
+                <label class="block font-bold text-stone-700 mb-4">🧰 Genutzte Werkzeuge & Methoden</label>
+                <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-3" id="strategies-container">
+                    <!-- JS Populated -->
+                </div>
+            </div>
+
+            <!-- Cognitive Depth Slider -->
+            <div class="bg-gradient-to-r from-blue-50 to-indigo-50 p-6 rounded-xl border border-indigo-100">
+                <div class="mb-4">
+                    <label class="block font-bold text-indigo-900 text-lg">🧠 Kognitive Tiefe</label>
+                    <p class="text-sm text-indigo-700 mt-2 bg-white/50 p-3 rounded-lg border border-indigo-100">
+                        <strong>Was bedeutet das?</strong><br>
+                        "Kognitive Tiefe" beschreibt, wie intensiv du dich mit dem Lernstoff beschäftigt hast. 
+                        Hast du Informationen nur kurzzeitig gespeichert ("Bulimie-Lernen") oder hast du sie wirklich durchdrungen, verstanden und kannst sie auf neue Situationen übertragen?
+                    </p>
+                </div>
+
+                <div class="flex justify-between items-end mb-4">
+                    <p class="text-xs text-indigo-600 italic">Einschätzung:</p>
+                    <span id="val-depth" class="text-3xl font-bold text-indigo-600">5/10</span>
+                </div>
+                
+                <div class="relative pt-6 pb-2 px-2">
+                    <input type="range" min="1" max="10" value="5" id="input-depth" class="w-full accent-indigo-600" oninput="app.updateDepth(this.value)">
+                </div>
+                
+                <div class="flex justify-between text-xs font-medium text-stone-500 mt-2 px-1">
+                    <div class="text-left w-1/3">
+                        <span class="block font-bold text-stone-700">Oberflächlich (1-3)</span>
+                        Durchlesen, Markieren, Auswendiglernen
+                    </div>
+                    <div class="text-center w-1/3 border-l border-r border-stone-300">
+                        <span class="block font-bold text-stone-700">Verarbeitend (4-7)</span>
+                        Zusammenfassen, Strukturieren, Ordnen
+                    </div>
+                    <div class="text-right w-1/3">
+                        <span class="block font-bold text-stone-700">Tief (8-10)</span>
+                        Erklären, Transfer, Kritisieren, Verknüpfen
+                    </div>
+                </div>
+            </div>
+
+            <div class="mt-8 flex justify-between">
+                <button onclick="app.switchTab('retro')" class="text-stone-500 hover:text-stone-700 px-4">Zurück</button>
+                <button onclick="app.switchTab('plan')" class="bg-teal-600 hover:bg-teal-700 text-white px-6 py-2 rounded-lg font-bold shadow-md transition-transform transform active:scale-95 flex items-center gap-2">
+                    Weiter zum Plan ➔
+                </button>
+            </div>
+        </section>
+
+        <!-- VIEW 4: DER PLAN -->
+        <section id="view-plan" class="view-section hidden animate-fade-in">
+            <div class="mb-6 bg-white p-6 rounded-xl shadow-sm border border-stone-100">
+                <h2 class="text-lg font-bold text-teal-900 mb-2">Der Plan: Transfer in die Zukunft</h2>
+                <p class="text-sm text-stone-600">
+                    Erkenntnis ohne Handlung ist wertlos. Wir nutzen die "Start / Stop / Continue" Methode, um ganz konkrete Vereinbarungen für die nächste Woche zu treffen.
+                </p>
+            </div>
+
+            <div class="space-y-4">
+                <!-- START -->
+                <div class="flex flex-col sm:flex-row gap-4 bg-white p-4 rounded-xl border-l-4 border-emerald-500 shadow-sm">
+                    <div class="sm:w-32 flex-shrink-0 flex items-center">
+                        <div class="bg-emerald-100 text-emerald-700 p-2 rounded-lg font-bold w-full text-center">🟢 START</div>
+                    </div>
+                    <div class="flex-grow">
+                        <label class="text-xs uppercase font-bold text-stone-400">Was fange ich neu an?</label>
+                        <input type="text" id="input-start" class="w-full mt-1 p-2 border-b border-stone-200 focus:border-emerald-500 focus:outline-none bg-transparent transition-colors" placeholder="z.B. Handy vor dem Lernen weglegen...">
+                    </div>
+                </div>
+
+                <!-- STOP -->
+                <div class="flex flex-col sm:flex-row gap-4 bg-white p-4 rounded-xl border-l-4 border-rose-500 shadow-sm">
+                    <div class="sm:w-32 flex-shrink-0 flex items-center">
+                        <div class="bg-rose-100 text-rose-700 p-2 rounded-lg font-bold w-full text-center">🔴 STOP</div>
+                    </div>
+                    <div class="flex-grow">
+                        <label class="text-xs uppercase font-bold text-stone-400">Was lasse ich sein?</label>
+                        <input type="text" id="input-stop" class="w-full mt-1 p-2 border-b border-stone-200 focus:border-rose-500 focus:outline-none bg-transparent transition-colors" placeholder="z.B. Lernen auf den letzten Drücker...">
+                    </div>
+                </div>
+
+                <!-- CONTINUE -->
+                <div class="flex flex-col sm:flex-row gap-4 bg-white p-4 rounded-xl border-l-4 border-blue-500 shadow-sm">
+                    <div class="sm:w-32 flex-shrink-0 flex items-center">
+                        <div class="bg-blue-100 text-blue-700 p-2 rounded-lg font-bold w-full text-center">🔵 CONTINUE</div>
+                    </div>
+                    <div class="flex-grow">
+                        <label class="text-xs uppercase font-bold text-stone-400">Was behalte ich bei?</label>
+                        <input type="text" id="input-continue" class="w-full mt-1 p-2 border-b border-stone-200 focus:border-blue-500 focus:outline-none bg-transparent transition-colors" placeholder="z.B. Karteikarten schreiben...">
+                    </div>
+                </div>
+
+                <!-- FREE TEXT NOTES (New Feature) -->
+                <div class="bg-white p-4 rounded-xl border border-stone-200 shadow-sm">
+                    <label class="block font-bold text-stone-700 mb-2">📝 Sonstiges / Freie Notizen</label>
+                    <p class="text-xs text-stone-500 mb-2">Platz für zusätzliche Gedanken, Wünsche oder Anmerkungen.</p>
+                    <textarea id="input-notes" class="w-full h-24 p-3 rounded-lg border-stone-200 bg-stone-50 focus:ring-2 focus:ring-teal-400 focus:border-transparent resize-none text-sm" placeholder="Hier ist Platz für alles Weitere..."></textarea>
+                </div>
+
+                <!-- Main Goal -->
+                <div class="mt-6 bg-stone-800 text-white p-6 rounded-xl shadow-lg">
+                    <label class="block font-bold text-teal-400 mb-2">🎯 Mein Hauptziel bis zum nächsten Gespräch:</label>
+                    <input type="text" id="input-goal" class="w-full bg-stone-700 border border-stone-600 rounded p-3 text-white focus:ring-2 focus:ring-teal-500 focus:outline-none" placeholder="Hier das wichtigste Ziel eintragen...">
+                </div>
+            </div>
+
+            <div class="mt-8 flex justify-between">
+                <button onclick="app.switchTab('strategy')" class="text-stone-500 hover:text-stone-700 px-4">Zurück</button>
+                <button onclick="app.switchTab('cockpit')" class="bg-indigo-600 hover:bg-indigo-700 text-white px-6 py-2 rounded-lg font-bold shadow-md transition-transform transform active:scale-95 flex items-center gap-2">
+                    Zum Cockpit (Auswertung) 📊
+                </button>
+            </div>
+        </section>
+
+        <!-- VIEW 5: COCKPIT (SUMMARY) -->
+        <section id="view-cockpit" class="view-section hidden animate-fade-in">
+            <div class="mb-6 flex flex-col md:flex-row justify-between items-start md:items-center gap-4 bg-white p-6 rounded-xl shadow-sm border border-indigo-100">
+                <div>
+                    <h2 class="text-lg font-bold text-indigo-900 mb-1">Reflexions-Cockpit</h2>
+                    <p class="text-sm text-stone-600">Zusammenfassung für das Gespräch</p>
+                </div>
+                
+                <!-- BUTTON AREA -->
+                <!-- data-html2canvas-ignore="true" ensures these buttons are not in the PDF -->
+                <div class="flex gap-2" data-html2canvas-ignore="true">
+                    <!-- Standard Drucken Button -->
+                    <button onclick="window.print()" class="bg-stone-200 hover:bg-stone-300 text-stone-700 px-4 py-2 rounded-lg text-sm font-bold flex items-center gap-2">
+                        🖨️ Drucken
+                    </button>
+                    <!-- Neuer PDF Download Button -->
+                    <button onclick="app.generatePDF()" class="bg-indigo-600 hover:bg-indigo-700 text-white px-4 py-2 rounded-lg text-sm font-bold flex items-center gap-2 shadow-sm transition-transform active:scale-95">
+                        📥 PDF
+                    </button>
+                </div>
+            </div>
+
+            <div class="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-6">
+                <!-- CHART 1: Balance Radar -->
+                <div class="bg-white p-4 rounded-xl shadow-sm border border-stone-200">
+                    <h3 class="text-sm font-bold text-stone-500 mb-4 text-center">Balance: Energie vs. Motivation vs. Tiefe</h3>
+                    <div class="chart-container">
+                        <canvas id="radarChart"></canvas>
+                    </div>
+                    <p class="text-xs text-center text-stone-400 mt-2">Ideal: Ein großes, ausgeglichenes Dreieck.</p>
+                </div>
+
+                <!-- Qualitative Summary -->
+                <div class="space-y-4">
+                    <!-- Text Summary Block -->
+                    <div class="bg-white p-4 rounded-xl shadow-sm border border-stone-200 h-full">
+                        <h3 class="text-sm font-bold text-stone-500 mb-4 border-b pb-2">Die wichtigsten Punkte</h3>
+                        
+                        <div class="mb-4">
+                            <span class="text-xs font-bold text-emerald-600 uppercase">Erfolg</span>
+                            <p id="summary-success" class="text-sm text-stone-700 italic">Noch kein Eintrag...</p>
+                        </div>
+                        
+                        <div class="mb-4">
+                            <span class="text-xs font-bold text-rose-600 uppercase">Hürde</span>
+                            <p id="summary-hurdle" class="text-sm text-stone-700 italic">Noch kein Eintrag...</p>
+                        </div>
+
+                        <div class="mb-4">
+                            <span class="text-xs font-bold text-indigo-600 uppercase">Fokus-Strategien</span>
+                            <div id="summary-strategies" class="flex flex-wrap gap-2 mt-1">
+                                <!-- JS Populated -->
+                            </div>
+                        </div>
+
+                        <!-- New Summary Field for Notes -->
+                        <div>
+                            <span class="text-xs font-bold text-stone-500 uppercase">Sonstige Notizen</span>
+                            <p id="summary-notes" class="text-sm text-stone-700 italic">Keine Notizen.</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Action Plan Summary -->
+            <div class="bg-stone-800 text-stone-200 p-6 rounded-xl shadow-md mb-8">
+                <h3 class="text-teal-400 font-bold mb-4 uppercase text-sm tracking-wider">Vereinbarungen</h3>
+                <div class="grid grid-cols-1 md:grid-cols-3 gap-4 text-sm">
+                    <div class="bg-stone-700 p-3 rounded">
+                        <span class="text-emerald-400 font-bold block mb-1">🟢 START</span>
+                        <span id="summary-start">-</span>
+                    </div>
+                    <div class="bg-stone-700 p-3 rounded">
+                        <span class="text-rose-400 font-bold block mb-1">🔴 STOP</span>
+                        <span id="summary-stop">-</span>
+                    </div>
+                    <div class="bg-stone-700 p-3 rounded">
+                        <span class="text-blue-400 font-bold block mb-1">🔵 CONTINUE</span>
+                        <span id="summary-continue">-</span>
+                    </div>
+                </div>
+                <div class="mt-4 pt-4 border-t border-stone-600">
+                    <span class="text-stone-400 text-xs uppercase">Hauptziel:</span>
+                    <p id="summary-goal" class="text-lg font-bold text-white mt-1">-</p>
+                </div>
+            </div>
+
+            <!-- Hidden Charts for Print/Expansion -->
+             <div class="hidden">
+                 <!-- Could add more analytics here later -->
+             </div>
+        </section>
+
+    </main>
+
+    <!-- Footer -->
+    <!-- data-html2canvas-ignore="true" so it's not in the PDF screenshot (optional, usually footer is fine) -->
+    <footer class="bg-stone-100 py-6 border-t border-stone-200 mt-auto print:hidden" data-html2canvas-ignore="true">
+        <div class="max-w-4xl mx-auto px-4 text-center text-xs text-stone-400">
+            <p class="mb-2">Interaktives Reflexionstool | Daten werden nicht gespeichert (Session-Only).</p>
+            
+            <!-- CC Lizenz Hinweis -->
+            <p xmlns:cc="http://creativecommons.org/ns#" >
+              Dieses Werk ist lizenziert unter einer 
+              <a href="http://creativecommons.org/licenses/by-nc-nd/4.0/?ref=chooser-v1" target="_blank" rel="license noopener noreferrer" style="display:inline-block;" class="underline hover:text-stone-600">
+                CC BY-NC-ND 4.0 Lizenz
+              </a>
+            </p>
+        </div>
+    </footer>
+
+    <!-- Application Logic -->
+    <script>
+        const app = {
+            state: {
+                energy: 3,
+                motivation: 3,
+                depth: 5,
+                feelings: [],
+                hurdleCauses: [],
+                strategies: [],
+                success: '',
+                hurdle: '',
+                start: '',
+                stop: '',
+                continue: '',
+                goal: '',
+                notes: '' // Added state for notes
+            },
+            
+            // Configuration Data
+            config: {
+                // HINWEIS ZUM HINZUFÜGEN NEUER FELDER:
+                // Um neue Optionen hinzuzufügen, einfach eine neue Zeile in das entsprechende Array einfügen.
+                // Format: { id: 'ein_eindeutiger_name', label: 'Der angezeigte Text/Emoji' }
+                
+                // 1. Gefühle (Seite 1: Status Quo)
+                feelings: [
+                    { id: 'stressed', label: '😰 Gestresst' },
+                    { id: 'bored', label: '🥱 Gelangweilt' },
+                    { id: 'secure', label: '😎 Kompetent' },
+                    { id: 'curious', label: '🧐 Neugierig' },
+                    { id: 'tired', label: '😴 Müde' },
+                    { id: 'motivated', label: '🔥 Motiviert' }
+                ],
+                
+                // 2. Hürden-Ursachen (Seite 2: Rückblick)
+                hurdleCauses: [
+                    { id: 'time', label: '⏳ Zeitmangel' },
+                    { id: 'understanding', label: '❓ Verständnis' },
+                    { id: 'distraction', label: '📱 Ablenkung' },
+                    { id: 'strategy', label: '🔧 Falsche Strategie' },
+                    // Verschoben von Gefühle:
+                    { id: 'approachable', label: '💬 Ansprechbar' }
+                ],
+                
+                // 3. Strategien (Seite 3: Strategie)
+                // Hier wurde 'description' hinzugefügt für das Hover-Tooltip
+                strategies: [
+                    { id: 'summary', label: '📝 Zusammenfassung', description: 'Wichtiges in eigenen Worten kurz aufschreiben.' },
+                    { id: 'mindmap', label: '🧠 Mindmap', description: 'Themen visuell verknüpfen und strukturieren.' },
+                    { id: 'explain', label: '🗣️ Erklären (Feynman)', description: 'So erklären, als würde man es einem Kind beibringen.' },
+                    { id: 'flashcards', label: '🗂️ Karteikarten', description: 'Begriffe und Definitionen aktiv wiederholen.' },
+                    { id: 'reading', label: '📖 Nur Lesen (Passiv)', description: 'Text durchlesen ohne weitere Bearbeitung.' },
+                    { id: 'video', label: '📺 Videos' },
+                    { id: 'practice', label: '✍️ Aufgaben lösen', description: 'Übungsaufgaben selbstständig bearbeiten.' },
+                    // NEU HINZUGEFÜGT:
+                    { id: 'cornell', label: '📓 Cornell Methode', description: 'Notizen strukturieren: Hinweise, Hauptteil, Zusammenfassung.' },
+                    { id: 'SQ3R', label: '📖 SQ3R Methode', description: '5 Schritte: Überblick, Fragen, Lesen, Wiedergeben, Rückblick.' },
+                    // KI Tool hinzugefügt
+                    { id: 'ai', label: '🤖 KI-Tools', description: 'ChatGPT & Co. als Tutor nutzen, nicht nur zum Abschreiben.' }
+                ]
+            },
+
+            charts: {
+                radar: null
+            },
+
+            init() {
+                // Set Date
+                document.getElementById('dateDisplay').textContent = new Date().toLocaleDateString('de-DE', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' });
+
+                // Render Toggle Buttons
+                this.renderToggles('feelings-container', this.config.feelings, 'feelings');
+                this.renderToggles('hurdles-container', this.config.hurdleCauses, 'hurdleCauses');
+                this.renderToggles('strategies-container', this.config.strategies, 'strategies');
+
+                // Bind Text Inputs
+                this.bindInput('input-success', 'success');
+                this.bindInput('input-hurdle', 'hurdle');
+                this.bindInput('input-start', 'start');
+                this.bindInput('input-stop', 'stop');
+                this.bindInput('input-continue', 'continue');
+                this.bindInput('input-notes', 'notes'); // Bind new input
+                this.bindInput('input-goal', 'goal');
+
+                // Init Chart
+                this.initCharts();
+            },
+
+            // --- Navigation ---
+            switchTab(tabId) {
+                // Hide all views
+                document.querySelectorAll('.view-section').forEach(el => el.classList.add('hidden'));
+                // Show target
+                document.getElementById('view-' + tabId).classList.remove('hidden');
+                
+                // Update Nav Styling
+                document.querySelectorAll('.nav-btn').forEach(btn => {
+                    btn.classList.remove('border-teal-600', 'text-teal-800', 'bg-teal-50', 'border-indigo-600', 'text-indigo-800', 'bg-indigo-50');
+                    btn.classList.add('border-transparent', 'text-stone-500');
+                    // Special styling for Cockpit
+                    if(btn.id === 'nav-cockpit') btn.classList.add('text-indigo-600');
+                });
+
+                const activeBtn = document.getElementById('nav-' + tabId);
+                activeBtn.classList.remove('border-transparent', 'text-stone-500');
+                if(tabId === 'cockpit') {
+                    activeBtn.classList.add('border-indigo-600', 'text-indigo-800', 'bg-indigo-50');
+                    this.updateCockpit(); // Refresh data when entering cockpit
+                } else {
+                    activeBtn.classList.add('border-teal-600', 'text-teal-800', 'bg-teal-50');
+                }
+                
+                // Scroll to top
+                window.scrollTo(0,0);
+            },
+
+            // --- Core Interaction Handling ---
+            
+            // Sliders
+            setEnergy(val) {
+                this.state.energy = parseInt(val);
+                document.getElementById('input-energy').value = val;
+                this.updateEnergy(val);
+            },
+            updateEnergy(val) {
+                this.state.energy = parseInt(val);
+                document.getElementById('val-energy').textContent = val + "/5";
+            },
+
+            setMotivation(val) {
+                this.state.motivation = parseInt(val);
+                document.getElementById('input-motivation').value = val;
+                this.updateMotivation(val);
+            },
+            updateMotivation(val) {
+                this.state.motivation = parseInt(val);
+                document.getElementById('val-motivation').textContent = val + "/5";
+            },
+
+            updateDepth(val) {
+                this.state.depth = parseInt(val);
+                document.getElementById('val-depth').textContent = val + "/10";
+            },
+
+            // Toggle Buttons (Generic)
+            renderToggles(containerId, items, stateKey) {
+                const container = document.getElementById(containerId);
+                container.innerHTML = '';
+                items.forEach(item => {
+                    const btn = document.createElement('button');
+                    // Add 'group' and 'relative' to support tooltips
+                    const baseClass = 'group relative px-4 py-2 rounded-lg border text-sm font-medium transition-all duration-200 select-none';
+                    
+                    const activeClass = 'bg-stone-800 text-white border-stone-800 shadow-md transform scale-105';
+                    const inactiveClass = 'bg-white text-stone-600 border-stone-300 hover:bg-stone-50';
+                    
+                    btn.className = `${baseClass} ${this.state[stateKey].includes(item.id) ? activeClass : inactiveClass}`;
+                    
+                    // Button Text
+                    btn.textContent = item.label;
+                    
+                    btn.onclick = () => this.toggleItem(item.id, stateKey, btn);
+
+                    // --- TOOLTIP LOGIC START ---
+                    // Only render if description exists
+                    if (item.description) {
+                        const tooltip = document.createElement('div');
+                        tooltip.className = 'absolute bottom-full left-1/2 transform -translate-x-1/2 mb-2 w-48 p-2 bg-stone-800 text-white text-xs rounded shadow-xl opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none z-50 font-normal leading-tight border border-stone-600';
+                        tooltip.textContent = item.description;
+
+                        // Little Arrow for Tooltip
+                        const arrow = document.createElement('div');
+                        arrow.className = 'absolute top-full left-1/2 transform -translate-x-1/2 border-4 border-transparent border-t-stone-800';
+                        tooltip.appendChild(arrow);
+
+                        btn.appendChild(tooltip);
+                    }
+                    // --- TOOLTIP LOGIC END ---
+
+                    container.appendChild(btn);
+                });
+            },
+
+            toggleItem(id, stateKey, btnElement) {
+                const index = this.state[stateKey].indexOf(id);
+                if (index === -1) {
+                    this.state[stateKey].push(id);
+                    // Update UI active state (preserve 'group' and 'relative')
+                    // Removing classes
+                    btnElement.classList.remove('bg-white', 'text-stone-600', 'border-stone-300', 'hover:bg-stone-50');
+                    // Adding classes
+                    btnElement.classList.add('bg-stone-800', 'text-white', 'border-stone-800', 'shadow-md', 'transform', 'scale-105');
+                } else {
+                    this.state[stateKey].splice(index, 1);
+                    // Update UI inactive state
+                    // Removing classes
+                    btnElement.classList.remove('bg-stone-800', 'text-white', 'border-stone-800', 'shadow-md', 'transform', 'scale-105');
+                    // Adding classes
+                    btnElement.classList.add('bg-white', 'text-stone-600', 'border-stone-300', 'hover:bg-stone-50');
+                }
+            },
+
+            bindInput(elemId, stateKey) {
+                const el = document.getElementById(elemId);
+                el.addEventListener('input', (e) => {
+                    this.state[stateKey] = e.target.value;
+                });
+            },
+
+            // --- Visualization Logic ---
+            initCharts() {
+                const ctxRadar = document.getElementById('radarChart').getContext('2d');
+                
+                this.charts.radar = new Chart(ctxRadar, {
+                    type: 'radar',
+                    data: {
+                        labels: ['Energie', 'Motivation', 'Kognitive Tiefe'],
+                        datasets: [{
+                            label: 'Dein Profil',
+                            data: [3, 3, 5], // Init values (Depth is 1-10, others 1-5, need normalization in update)
+                            fill: true,
+                            backgroundColor: 'rgba(13, 148, 136, 0.2)', // teal-600 with opacity
+                            borderColor: 'rgb(13, 148, 136)',
+                            pointBackgroundColor: 'rgb(13, 148, 136)',
+                            pointBorderColor: '#fff',
+                            pointHoverBackgroundColor: '#fff',
+                            pointHoverBorderColor: 'rgb(13, 148, 136)'
+                        }]
+                    },
+                    options: {
+                        maintainAspectRatio: false,
+                        elements: {
+                            line: { borderWidth: 3 }
+                        },
+                        scales: {
+                            r: {
+                                angleLines: { display: false },
+                                suggestedMin: 0,
+                                suggestedMax: 10,
+                                ticks: { display: false } // Hide numbers for cleaner look
+                            }
+                        },
+                        plugins: {
+                            legend: { display: false }
+                        }
+                    }
+                });
+            },
+
+            updateCockpit() {
+                // 1. Update Text Summaries
+                const setText = (id, val, emptyMsg) => {
+                    document.getElementById(id).textContent = val && val.trim() !== '' ? val : emptyMsg;
+                    if(val && val.trim() !== '') document.getElementById(id).classList.remove('italic');
+                    else document.getElementById(id).classList.add('italic');
+                };
+
+                setText('summary-success', this.state.success, 'Kein Erfolgserlebnis eingetragen.');
+                setText('summary-hurdle', this.state.hurdle, 'Keine Hürde eingetragen.');
+                setText('summary-start', this.state.start, '-');
+                setText('summary-stop', this.state.stop, '-');
+                setText('summary-continue', this.state.continue, '-');
+                setText('summary-notes', this.state.notes, 'Keine Notizen.');
+                setText('summary-goal', this.state.goal, 'Kein Ziel definiert.');
+
+                // Strategies Badges in Summary
+                const stratContainer = document.getElementById('summary-strategies');
+                stratContainer.innerHTML = '';
+                if(this.state.strategies.length === 0) {
+                    stratContainer.innerHTML = '<span class="text-xs text-stone-400 italic">Keine ausgewählt</span>';
+                } else {
+                    this.state.strategies.forEach(sid => {
+                        const stratConfig = this.config.strategies.find(s => s.id === sid);
+                        if(stratConfig) {
+                            const badge = document.createElement('span');
+                            badge.className = 'bg-indigo-100 text-indigo-800 text-xs px-2 py-1 rounded font-medium';
+                            badge.textContent = stratConfig.label;
+                            stratContainer.appendChild(badge);
+                        }
+                    });
+                }
+
+                // 2. Update Charts
+                if(this.charts.radar) {
+                    // Normalize Energy/Motivation (1-5) to (2-10) for the chart to match Depth (1-10) visual weight
+                    const normEnergy = this.state.energy * 2;
+                    const normMotivation = this.state.motivation * 2;
+                    
+                    this.charts.radar.data.datasets[0].data = [
+                        normEnergy, 
+                        normMotivation, 
+                        this.state.depth
+                    ];
+                    this.charts.radar.update();
+                }
+            },
+            
+            // --- PDF Generation Logic ---
+            async generatePDF() {
+                const { jsPDF } = window.jspdf;
+                
+                // Select element to capture (document body or main content)
+                // We'll capture body to include header, but ignore nav/footer via data attributes
+                const element = document.body;
+                
+                // Temporary visual changes before capture if needed (though data-html2canvas-ignore handles most)
+                // Ensure scroll is at top
+                window.scrollTo(0, 0);
+
+                try {
+                    const canvas = await html2canvas(element, {
+                        scale: 2, // Higher scale for better resolution
+                        useCORS: true, // Needed for images if served from external
+                        logging: false,
+                        ignoreElements: (element) => {
+                            // Also manually check for ignore attribute if library version behaves oddly
+                            return element.hasAttribute('data-html2canvas-ignore');
+                        }
+                    });
+
+                    const imgData = canvas.toDataURL('image/png');
+                    
+                    // Create PDF
+                    // A4 size: 210mm x 297mm
+                    const pdf = new jsPDF('p', 'mm', 'a4');
+                    const pdfWidth = pdf.internal.pageSize.getWidth();
+                    const pdfHeight = pdf.internal.pageSize.getHeight();
+                    
+                    const imgProps = pdf.getImageProperties(imgData);
+                    const imgHeight = (imgProps.height * pdfWidth) / imgProps.width;
+                    
+                    // If content is longer than one page, simple scaling (fit to width)
+                    // For this app, it usually fits on one page or we just print the first page for summary.
+                    // If it's very long, we might need addPage logic, but let's stick to simple single page scale first.
+                    
+                    let heightLeft = imgHeight;
+                    let position = 0;
+
+                    pdf.addImage(imgData, 'PNG', 0, position, pdfWidth, imgHeight);
+                    
+                    // Handle multi-page if strictly needed (simple version)
+                    /* heightLeft -= pdfHeight;
+                    while (heightLeft >= 0) {
+                      position = heightLeft - imgHeight;
+                      pdf.addPage();
+                      pdf.addImage(imgData, 'PNG', 0, position, pdfWidth, imgHeight);
+                      heightLeft -= pdfHeight;
+                    }
+                    */
+
+                    // Generate filename with date
+                    const dateStr = new Date().toISOString().split('T')[0];
+                    pdf.save(`Reflexion_${dateStr}.pdf`);
+                    
+                } catch (err) {
+                    console.error("PDF Generation Error: ", err);
+                    alert("Fehler beim Erstellen des PDFs. Bitte nutzen Sie die 'Drucken'-Funktion und wählen Sie 'Als PDF speichern'.");
+                }
+            }
+        };
+
+        // Start App
+        window.addEventListener('DOMContentLoaded', () => {
+            app.init();
+        });
+    </script>
+</body>
+</html>
