@@ -441,6 +441,20 @@
                 </div>
             </div>
 
+            <!-- UNTERSCHRIFT (Verschoben in den Cockpit Bereich) -->
+            <div class="mb-8 bg-yellow-50 p-6 rounded-xl border-2 border-dashed border-yellow-400 shadow-md relative transition-transform hover:scale-[1.01]">
+                <div class="absolute -top-3 left-6 bg-yellow-100 text-yellow-800 px-3 py-1 rounded-full text-xs font-bold uppercase tracking-wide border border-yellow-300 shadow-sm">
+                    Verbindlichkeit
+                </div>
+                
+                <p class="block font-bold text-stone-800 mb-4 text-lg">Gelesen und akzeptiert:</p>
+                
+                <div class="flex flex-col sm:flex-row sm:items-end gap-2">
+                    <label for="input-signature" class="font-bold text-stone-800 text-lg whitespace-nowrap mb-1 sm:mb-0">Unterschrift Schüler:innen:</label>
+                    <input type="text" id="input-signature" class="flex-grow border-b-2 border-stone-800 focus:border-teal-600 focus:outline-none bg-transparent py-1 font-serif italic text-xl text-stone-800" placeholder="">
+                </div>
+            </div>
+
             <!-- Hidden Charts for Print/Expansion -->
              <div class="hidden">
                  <!-- Could add more analytics here later -->
@@ -481,7 +495,8 @@
                 stop: '',
                 continue: '',
                 goal: '',
-                notes: '' // Added state for notes
+                notes: '',
+                signature: '' // Added state for signature
             },
             
             // Configuration Data
@@ -547,8 +562,9 @@
                 this.bindInput('input-start', 'start');
                 this.bindInput('input-stop', 'stop');
                 this.bindInput('input-continue', 'continue');
-                this.bindInput('input-notes', 'notes'); // Bind new input
+                this.bindInput('input-notes', 'notes');
                 this.bindInput('input-goal', 'goal');
+                this.bindInput('input-signature', 'signature'); // Bind signature input
 
                 // Init Chart
                 this.initCharts();
@@ -730,6 +746,9 @@
                 setText('summary-continue', this.state.continue, '-');
                 setText('summary-notes', this.state.notes, 'Keine Notizen.');
                 setText('summary-goal', this.state.goal, 'Kein Ziel definiert.');
+                
+                // Signature input is now directly in the cockpit view, so we don't need to copy text to a summary span.
+                // The input field maintains its own state via the bindInput logic.
 
                 // Strategies Badges in Summary
                 const stratContainer = document.getElementById('summary-strategies');
