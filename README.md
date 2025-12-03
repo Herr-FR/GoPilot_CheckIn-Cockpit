@@ -93,8 +93,6 @@ Nicht-kommerziell: Sie dürfen das Material nicht für kommerzielle Zwecke nutze
 
 Keine Bearbeitung: Wenn Sie das Material remixen, verändern oder anderweitig direkt darauf aufbauen, dürfen Sie die bearbeitete Fassung des Materials nicht verbreiten.
 
-📄 Lizenz
-
 Frei zur Nutzung im Bildungskontext.
 
 Eine kommerzielle Nutzung oder Weiterverbreitung bedarf der Zustimmung des Autors.
