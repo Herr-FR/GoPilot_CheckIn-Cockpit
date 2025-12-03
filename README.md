@@ -75,8 +75,23 @@ strategies: [
     { id: 'new_item', label: '🎧 Podcast hören' } // Neu hinzugefügt
 ]
 
+# Lizenzhinweis
 
-📄 Lizenz
+Lizenzhinweis: Dieses Werk ist lizenziert unter einer Creative Commons Namensnennung - Nicht-kommerziell - Keine Bearbeitung 4.0 International Lizenz.
+
+Das bedeutet, Sie dürfen:
+
+Teilen: Das Material in jedwedem Format oder Medium vervielfältigen und weiterverbreiten.
+
+Der Lizenzgeber kann diese Freiheiten nicht widerrufen, solange Sie sich an die Lizenzbedingungen halten.
+
+Unter folgenden Bedingungen:
+
+Namensnennung: Sie müssen angemessene Urheber- und Rechteangaben machen, einen Link zur Lizenz beifügen und angeben, ob Änderungen vorgenommen wurden (Hinweis: Änderungen sind hier nicht erlaubt).
+
+Nicht-kommerziell: Sie dürfen das Material nicht für kommerzielle Zwecke nutzen.
+
+Keine Bearbeitung: Wenn Sie das Material remixen, verändern oder anderweitig direkt darauf aufbauen, dürfen Sie die bearbeitete Fassung des Materials nicht verbreiten.
 
 Frei zur Nutzung im Bildungskontext.
 
